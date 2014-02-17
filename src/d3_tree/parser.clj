@@ -17,13 +17,17 @@
   [node]
   (-> (l/select (lz/zip node) (l/class= "navSubTxt")) first l/text (str/trim)))
 
+(defn get-sub-categories-tree
+  [multi-menu html]
+  (l/select html (l/id= (-> multi-menu :attrs :data-sub-menu))))
+
 (defn get-sub-categories
   [node]
-  (l/select (lz/zip node) (l/class= "bsnch")))
+  (l/select (lz/zip (-> node first)) (l/class= "nav-title")))
 
 (defn get-sub-sub-categories
   [node]
-  (l/select (lz/zip node) (l/class= "bsnclco") (l/class= "noborder")))
+  (l/select (lz/zip (-> node first)) (l/class= "nav-linklist")))
 
 (defn get-top-products
   [html]
@@ -46,20 +50,15 @@
         :when (not= nil uri)]
     {:id (swap! id inc) :name (-> content first (str/trim)) :children (get-products uri)}))
 
-(defn filter-sub-sub-cat
-  [sub-sub-cat]
-  (if (= "bsnclco" (get-in sub-sub-cat [:attrs :class]))
-    (:content sub-sub-cat) (vector sub-sub-cat)))
-
 (defn merge-sub-cat-with-sub-tree
   [pair]
   {:id (swap! id inc) :name (-> pair first (str/trim)) :children (second pair)})
 
 (defn build-category-sub-tree
   [sub-cats sub-sub-cats]
-  (let [sub-tree (for [cat sub-sub-cats
-                       :let [sub-sub-cat (filter-sub-sub-cat cat)]]
-                   (build-product-tree sub-sub-cat))]
+  (let [sub-tree (map
+                  #(build-product-tree (-> % :content))
+                  sub-sub-cats)]
     (->> (interleave (map #(l/text %) sub-cats) sub-tree)
          (partition 2)
          (map merge-sub-cat-with-sub-tree))))
@@ -72,19 +71,18 @@
   [html]
   (keep
    (fn [multi-menu]
-     (let [sub-cats (get-sub-categories multi-menu)]
-       (when-not (empty? sub-cats)
-         (->> (get-sub-sub-categories multi-menu)
-              (build-category-sub-tree sub-cats)
-              (build-category-main-tree multi-menu)))))
-   html))
+     (let [sub-cats-tree (get-sub-categories-tree multi-menu html)]
+       (when-not (empty? sub-cats-tree)
+         (let [sub-cats (get-sub-categories sub-cats-tree)
+               sub-sub-cats (get-sub-sub-categories sub-cats-tree)]
+           (->> (build-category-sub-tree sub-cats sub-sub-cats)
+                (build-category-main-tree multi-menu))))))
+   (get-all-categories html)))
 
 (defn scrape-html
   []
   (let [tree (->> url
                   (slurp)
                   (l/parse)
-                  (get-all-categories)
-                  (build-category-tree)
-                  (clojure.walk/postwalk identity))]
+                  (build-category-tree))]
     {:id 0 :name "Categories" :children tree}))
