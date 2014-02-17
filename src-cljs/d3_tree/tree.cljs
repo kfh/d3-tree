@@ -7,8 +7,6 @@
 
 (strokes/bootstrap)
 
-(def url "http://localhost:3000/get-category-tree")
-
 (def root-node (atom {}))
 
 (def duration 750)
@@ -185,7 +183,7 @@
 
     (-> nodes (stash-position))))
 
-(-> d3 (.json url (fn [error, jsroot]
+(-> d3 (.json "/get-tree" (fn [error, jsroot]
                     (let [cljsroot (js->clj jsroot :keywordize-keys true)]
                       (-> cljsroot
                           (assoc :x0 (/ height 2))

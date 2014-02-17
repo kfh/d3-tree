@@ -20,7 +20,7 @@
 
 (defroutes app-routes
   (GET "/" [] (resource-response "index.html" {:root "public"}))
-  (GET "/get-category-tree" [] (get-category-tree))
+  (GET "/get-tree" [] (get-category-tree))
   (route/resources "/")
   (route/not-found "Not Found"))
 
