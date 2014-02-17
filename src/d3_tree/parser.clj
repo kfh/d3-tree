@@ -1,5 +1,6 @@
 (ns d3-tree.parser
-  (:require [clojure.string :as str]
+  (:require [clojure.walk]
+            [clojure.string :as str]
             [me.raynes.laser :as l]
             [me.raynes.laser.zip :as lz]
             [clj-http.client :as http]))
@@ -84,5 +85,6 @@
   (let [tree (->> url
                   (slurp)
                   (l/parse)
-                  (build-category-tree))]
+                  (build-category-tree)
+                  (clojure.walk/postwalk identity))]
     {:id 0 :name "Categories" :children tree}))
