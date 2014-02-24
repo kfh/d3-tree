@@ -46,10 +46,13 @@
 
 (defn build-product-tree
   [sub-sub-cats]
-  (for [{:keys [attrs content]} sub-sub-cats
-        :let [uri (:href attrs)]
-        :when (not= nil uri)]
-    {:id (swap! id inc) :name (-> content first (str/trim)) :children (get-products uri)}))
+  (->> (pmap
+        #(when-let [uri (-> % :attrs :href)]
+           {:id (swap! id inc)
+            :name (-> % :content first (str/trim))
+            :children (get-products uri)})
+        sub-sub-cats)
+       (remove nil?)))
 
 (defn merge-sub-cat-with-sub-tree
   [pair]
@@ -57,7 +60,7 @@
 
 (defn build-category-sub-tree
   [sub-cats sub-sub-cats]
-  (let [sub-tree (map
+  (let [sub-tree (pmap
                   #(build-product-tree (-> % :content))
                   sub-sub-cats)]
     (->> (interleave (map #(l/text %) sub-cats) sub-tree)

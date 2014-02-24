@@ -11,7 +11,7 @@
 (defn lein-ring-init
   []
   (println "Initializing screen scraping..")
-  (def category-tree (scrape-html))
+  (def category-tree (time (scrape-html)))
   (println "Scraping done!"))
 
 (defn get-category-tree
